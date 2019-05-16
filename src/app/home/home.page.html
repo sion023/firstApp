@@ -7,13 +7,19 @@
 </ion-header>
 
 <ion-content padding>
-  <form name="form">
+  <form #f="ngForm" (submit)="addPost()" name="form">
     <ion-list class="inputBlock">
+
       <ion-item margin-bottom class="textBlock">
         <ion-label position="floating">メッセージ</ion-label>
-        <ion-input name="message" type="text"></ion-input>
+        <ion-input 
+          name="message" required [(ngModel)]="message" 
+          type="text">
+        </ion-input>
       </ion-item>
-      <ion-button type="submit" expand="full" block class="submit">投稿</ion-button>
+      <ion-button type="submit" expand="full" block class="submit"
+        [disabled]="!f.form.valid">
+      投稿</ion-button>
     </ion-list>
   </form>
 

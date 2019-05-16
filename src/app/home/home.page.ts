@@ -10,11 +10,9 @@ export class HomePage {
     userName: string,
     message: string,
     createdDate: any
-  } = {
-    userName: 'Shion Umezawa',
-    message: 'てすてす',
-    createdDate: '10分前'
   };
+  message: string;
+
 
   posts: {
     userName: string,
@@ -30,4 +28,14 @@ export class HomePage {
     message: 'てすとー',
     createdDate: '5分前'
   }];
+
+  addPost() {
+    this.post = {
+      userName: 'ebsloftt0536',
+      message: this.message,
+      createdDate: '数秒前'
+    };
+    this.posts.push(this.post);
+    this.message = '';
+  }
 }
