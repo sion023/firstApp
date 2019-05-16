@@ -17,12 +17,12 @@
     </ion-list>
   </form>
 
-  <ion-card class="singlePost">
+  <ion-card class="singlePost" *ngFor="let p of posts">
     <ion-item>
-      <h2 padding-vertical>{{post.userName}}</h2>
+      <h2 padding-vertical>{{p.userName}}</h2>
     </ion-item>
     <ion-card-content>
-      <div margin-bottom>{{post.message}}</div>
+      <div margin-bottom>{{p.message}}</div>
       <ion-row>
         <ion-col size="6" size-sm>
           <ion-button fill="clear" size="small">
@@ -43,7 +43,7 @@
           </ion-button>
         </ion-col>
         <ion-col size="6" size-sm class="postedtime">
-          <ion-note>{{post.createdDate}}</ion-note>
+          <ion-note>{{p.createdDate}}</ion-note>
         </ion-col>
       </ion-row>
     </ion-card-content>
