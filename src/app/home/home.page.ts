@@ -1,13 +1,15 @@
 import { Component, OnInit } from '@angular/core';
-import { AlertController, ToastController , ModalController} from '@ionic/angular';
+import { AlertController, ToastController, ModalController } from '@ionic/angular';
+import { Router } from '@angular/router';
+import * as moment from 'moment';
 
 import { AngularFirestore, AngularFirestoreCollection } from '@angular/fire/firestore';
 import { AngularFireAuth } from '@angular/fire/auth';
 import * as firebase from 'firebase';
-import * as moment from 'moment';
-import { Router } from '@angular/router';
 
 import { Post } from '../models/post';
+import { Comment } from '../models/comment';
+
 import { CommentsPage } from '../comments/comments.page';
 
 @Component({
@@ -19,6 +21,7 @@ export class HomePage implements OnInit {
     message: string; // 入力されるメッセージ用
     post: Post; // Postと同じデータ構造のプロパティーを指定できる
     posts: Post[]; // Post型の配列という指定もできる
+    comment: Comment;
 
     // Firestoreのコレクションを扱うプロパティー
     postsCollection: AngularFirestoreCollection<Post>;
@@ -30,12 +33,12 @@ export class HomePage implements OnInit {
         private afAuth: AngularFireAuth,
         private router: Router,
         private modalCtrl: ModalController
-    ) {}
+    ) { }
 
     ngOnInit() {
+        this.afStore.firestore.enableNetwork();
         // コンポーネントの初期化時に、投稿を読み込むgetPosts()を実行
         this.getPosts();
-        this.afStore.firestore.enableNetwork();
     }
 
     addPost() {
@@ -57,6 +60,8 @@ export class HomePage implements OnInit {
                 this.postsCollection.doc(docRef.id).update({
                     id: docRef.id
                 });
+                // ダイスボット処理
+                this.searchDiceBot(this.message, docRef.id);
                 // 追加できたら入力フィールドを空にする
                 this.message = '';
             })
@@ -158,10 +163,14 @@ export class HomePage implements OnInit {
                 await toast.present();
             });
     }
+
+    // 投稿日時と現在日時との差を返す
     differenceTime(time: Date): string {
         moment.locale('ja');
         return moment(time).fromNow();
     }
+
+    // ログアウト処理
     logout() {
         this.afStore.firestore.disableNetwork();
         this.afAuth.auth
@@ -182,6 +191,8 @@ export class HomePage implements OnInit {
                 await toast.present();
             });
     }
+
+    // コメントページへ現在の投稿を受け渡しつつ移動
     async showComment(post: Post) {
         const modal = await this.modalCtrl.create({
             component: CommentsPage,
@@ -191,4 +202,96 @@ export class HomePage implements OnInit {
         });
         return await modal.present();
     }
+
+    // コマンドかどうかを調べる
+    searchDiceBot(command, id) {
+        let x;
+        let y;
+        let match;
+        console.log(command.match(/[0-9]+d[0-9]+/));
+        // コマンド1の一致
+        match = command.match(/[0-9]+d[0-9]+/);
+        if (match) {
+            match = match[0];
+            match = match.split('d');
+            [x, y] = match;
+            // 計算した結果をコメントする
+            this.addBotComment(id, this.diceSum(x, y));
+            console.log(x, y);
+        }
+        // コマンド2の一致
+        match = command.match(/ccb<=[0-9]+/);
+        if (match) {
+            match = match[0];
+            // 不要な文字列'ccb<='を削除
+            match = match.replace('ccb<=', '');
+            // 2〜99以外はコメントしない（処理を終了）
+            if (match <= 1 || match >= 100) { return; }
+            // 計算した結果をコメントする
+            this.addBotComment(id, this.diceChallenge(match));
+        }
+    }
+
+    // コマンド1 ランダムな数値を合計する
+    diceSum(x, y) {
+        let sum = 0;
+        const sums = [];
+        // ｘ回繰り返す
+        for (let index = 0; index < x; index++) {
+            // 1からyまでのランダムな整数をsums(配列)に格納
+            sums.push(Math.round(Math.random() * (y - 1) + 1));
+            // 合計する
+            sum += sums[index];
+        }
+        console.log(sums);
+        // 合計値を返す
+        return '[' + sums + ']' + '→' + sum;
+    }
+
+    // コマンド2
+    diceChallenge(x) {
+        // 1~100の整数をランダムに出す
+        const ccb = Math.round(Math.random() * 99 + 1);
+        // ccbとxの値を比べる
+        if (ccb <= x) {
+            // ccbが５以下ならクリティカル、それ以外は成功
+            if (ccb <= 5) {
+                return ccb + '→クリティカル';
+            } else {
+                return ccb + '→成功';
+            }
+        } else {
+            // ccbが96以上ならファンブル、それ以外は失敗
+            if (ccb >= 96) {
+                return ccb + '→ファンブル';
+            } else {
+                return ccb + '→失敗';
+            }
+        }
+    }
+
+    // ボット用コメント投稿
+    addBotComment(id, message) {
+        this.comment = {
+            userName: this.afAuth.auth.currentUser.displayName,
+            message: message,
+            created: firebase.firestore.FieldValue.serverTimestamp(),
+            sourcePostId: id,
+            bot: true
+        };
+
+        this.afStore
+            .collection('comments')
+            .add(this.comment)
+            .then(async () => {
+            })
+            .catch(async error => {
+                const toast = await this.toastCtrl.create({
+                    message: error.toString(),
+                    duration: 3000
+                });
+                await toast.present();
+            });
+    }
+
 }

@@ -3,4 +3,5 @@ export interface Comment {
     userName: string;
     message: string;
     created: any;
+    bot: boolean;
 }

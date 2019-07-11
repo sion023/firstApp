@@ -3,8 +3,10 @@ import { ToastController } from '@ionic/angular';
 import { ModalController } from '@ionic/angular';
 
 import { AngularFireAuth } from '@angular/fire/auth';
-import { AngularFirestore,
-    AngularFirestoreCollection } from '@angular/fire/firestore';
+import {
+    AngularFirestore,
+    AngularFirestoreCollection
+} from '@angular/fire/firestore';
 import * as firebase from 'firebase';
 
 import { Post } from '../models/post';
@@ -27,7 +29,7 @@ export class CommentsPage implements OnInit {
         private afAuth: AngularFireAuth,
         private afStore: AngularFirestore,
         private modalCtrl: ModalController
-    ) {}
+    ) { }
 
     ngOnInit() {
         this.getComments();
@@ -51,7 +53,8 @@ export class CommentsPage implements OnInit {
             userName: this.afAuth.auth.currentUser.displayName,
             message: this.message,
             created: firebase.firestore.FieldValue.serverTimestamp(),
-            sourcePostId: this.sourcePost.id
+            sourcePostId: this.sourcePost.id,
+            bot: false
         };
 
         this.afStore
