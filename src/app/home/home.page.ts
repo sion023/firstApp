@@ -11,6 +11,7 @@ import { Post } from '../models/post';
 import { Comment } from '../models/comment';
 
 import { CommentsPage } from '../comments/comments.page';
+import { Storage } from '@ionic/storage';
 
 @Component({
     selector: 'app-home',
@@ -22,6 +23,7 @@ export class HomePage implements OnInit {
     post: Post; // Postと同じデータ構造のプロパティーを指定できる
     posts: Post[]; // Post型の配列という指定もできる
     comment: Comment;
+    postName: string; // 投稿者名
 
     // Firestoreのコレクションを扱うプロパティー
     postsCollection: AngularFirestoreCollection<Post>;
@@ -32,22 +34,30 @@ export class HomePage implements OnInit {
         private afStore: AngularFirestore,
         private afAuth: AngularFireAuth,
         private router: Router,
-        private modalCtrl: ModalController
+        private modalCtrl: ModalController,
+        private storage: Storage
     ) { }
 
     ngOnInit() {
         this.afStore.firestore.enableNetwork();
         // コンポーネントの初期化時に、投稿を読み込むgetPosts()を実行
         this.getPosts();
+        // 最後に入力した投稿者名の取得
+        this.storage.get(this.afAuth.auth.currentUser.uid).then((val) => {
+            this.postName = val;
+          });
     }
 
     addPost() {
+        // 投稿者名の保存
+        this.storage.set(this.afAuth.auth.currentUser.uid, this.postName);
         // 入力されたメッセージを使って、投稿データを作成
         this.post = {
             id: '',
             userName: this.afAuth.auth.currentUser.displayName,
             message: this.message,
-            created: firebase.firestore.FieldValue.serverTimestamp()
+            created: firebase.firestore.FieldValue.serverTimestamp(),
+            postName: this.postName
         };
 
         // ここでFirestoreにデータを追加する
